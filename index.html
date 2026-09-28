@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>String tools</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f5f7;
+      --panel: #ffffff;
+      --text: #1c1e21;
+      --muted: #5c6370;
+      --border: #d8dce3;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --error: #b42318;
+      --error-bg: #fef3f2;
+      --ok: #067647;
+      --ok-bg: #ecfdf3;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111318;
+        --panel: #1b1e26;
+        --text: #e8eaed;
+        --muted: #9aa3b2;
+        --border: #2e3440;
+        --accent: #3b82f6;
+        --accent-hover: #60a5fa;
+        --error: #fda29b;
+        --error-bg: #3b1818;
+        --ok: #6ce9a6;
+        --ok-bg: #123524;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.6rem;
+      font-weight: 650;
+    }
+
+    p.lead {
+      margin: 0 0 20px;
+      color: var(--muted);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 320px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel);
+      color: var(--text);
+      font: 14px/1.5 Consolas, "Cascadia Code", ui-monospace, monospace;
+      resize: vertical;
+    }
+
+    textarea:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin: 14px 0;
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font: 600 14px/1 "Segoe UI", system-ui, sans-serif;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+    }
+
+    button:hover { background: var(--accent-hover); }
+
+    button.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    button.secondary:hover { background: var(--panel); }
+
+    .indent {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .indent select {
+      padding: 7px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+    }
+
+    .status {
+      min-height: 1.4em;
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .status.error {
+      color: var(--error);
+      background: var(--error-bg);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+
+    .status.ok {
+      color: var(--ok);
+      background: var(--ok-bg);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin: 0 0 18px;
+    }
+
+    .tabs button[aria-selected="true"] {
+      background: var(--accent);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .tabs button[aria-selected="false"] {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    textarea.short { min-height: 140px; }
+
+    .jwt-output { margin-top: 8px; }
+
+    .jwt-output h2 {
+      margin: 18px 0 8px;
+      font-size: 0.95rem;
+    }
+
+    .claims {
+      display: grid;
+      grid-template-columns: 8.5rem 1fr;
+      gap: 6px 12px;
+      margin: 0;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel);
+    }
+
+    .claims dt {
+      margin: 0;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .claims dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+
+    pre {
+      margin: 0;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel);
+      overflow: auto;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font: 14px/1.5 Consolas, "Cascadia Code", ui-monospace, monospace;
+    }
+
+    .note {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>String tools</h1>
+    <div class="tabs" role="tablist">
+      <button type="button" id="tab-text" role="tab" aria-selected="true" aria-controls="panel-text">Text</button>
+      <button type="button" id="tab-jwt" role="tab" aria-selected="false" aria-controls="panel-jwt" class="secondary">JWT</button>
+    </div>
+
+    <section id="panel-text" role="tabpanel" aria-labelledby="tab-text">
+    <p class="lead">Paste text into the box. Format JSON, or convert the text to camelCase, snake_case, kebab-case, uppercase, or lowercase.</p>
+
+    <label for="input">Text</label>
+    <textarea id="input" spellcheck="false" placeholder='{"name":"Ada","items":[1,2,3]}'></textarea>
+
+    <div class="toolbar">
+      <button type="button" id="format">Format</button>
+      <button type="button" id="minify" class="secondary">Minify</button>
+      <button type="button" id="camel">camelCase</button>
+      <button type="button" id="snake" class="secondary">snake_case</button>
+      <button type="button" id="kebab" class="secondary">kebab-case</button>
+      <button type="button" id="upper" class="secondary">UPPERCASE</button>
+      <button type="button" id="lower" class="secondary">lowercase</button>
+      <button type="button" id="copy" class="secondary">Copy</button>
+      <label class="indent">
+        Indent
+        <select id="indent" aria-label="Indent size">
+          <option value="2" selected>2 spaces</option>
+          <option value="4">4 spaces</option>
+          <option value="\t">Tab</option>
+        </select>
+      </label>
+    </div>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="panel-jwt" role="tabpanel" aria-labelledby="tab-jwt" hidden>
+      <p class="lead">Paste a JWT to decode the header and payload and read the standard claims. The signature is shown as-is and is not verified.</p>
+
+      <label for="jwt-input">JWT</label>
+      <textarea id="jwt-input" class="short" spellcheck="false" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature"></textarea>
+
+      <div class="toolbar">
+        <button type="button" id="jwt-decode">Decode</button>
+      </div>
+
+      <p id="jwt-status" class="status" role="status" aria-live="polite"></p>
+      <div id="jwt-output" class="jwt-output" hidden></div>
+    </section>
+  </main>
+
+  <script>
+    const input = document.getElementById("input");
+    const status = document.getElementById("status");
+    const indentSelect = document.getElementById("indent");
+
+    function indentValue() {
+      return indentSelect.value === "\\t" ? "\t" : Number(indentSelect.value);
+    }
+
+    function setStatus(message, kind) {
+      status.textContent = message;
+      status.className = "status" + (kind ? " " + kind : "");
+    }
+
+    function requireText() {
+      if (!input.value.trim()) {
+        setStatus("Paste some text first.", "error");
+        return false;
+      }
+      return true;
+    }
+
+    function wordsOf(text) {
+      return text
+        .replace(/(\p{Ll}|\p{N})(\p{Lu})/gu, "$1 $2")
+        .replace(/(\p{Lu}+)(\p{Lu}\p{Ll})/gu, "$1 $2")
+        .split(/[^\p{L}\p{N}]+/gu)
+        .filter(Boolean)
+        .map((word) => word.toLowerCase());
+    }
+
+    function toCamelCase(text) {
+      return wordsOf(text)
+        .map((word, index) => {
+          if (index === 0) return word;
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        })
+        .join("");
+    }
+
+    function toSnakeCase(text) {
+      return wordsOf(text).join("_");
+    }
+
+    function toKebabCase(text) {
+      return wordsOf(text).join("-");
+    }
+
+    function convertCase(transform, label) {
+      if (!requireText()) return;
+      const next = transform(input.value);
+      if (!next) {
+        setStatus("No letters or digits to convert.", "error");
+        return;
+      }
+      input.value = next;
+      setStatus(label, "ok");
+    }
+
+    function parseJson() {
+      const raw = input.value.trim();
+      if (!raw) {
+        setStatus("Paste some JSON first.", "error");
+        return null;
+      }
+      try {
+        return JSON.parse(raw);
+      } catch (error) {
+        setStatus(error.message, "error");
+        return null;
+      }
+    }
+
+    document.getElementById("format").addEventListener("click", () => {
+      const value = parseJson();
+      if (value === null) return;
+      input.value = JSON.stringify(value, null, indentValue());
+      setStatus("Formatted.", "ok");
+    });
+
+    document.getElementById("minify").addEventListener("click", () => {
+      const value = parseJson();
+      if (value === null) return;
+      input.value = JSON.stringify(value);
+      setStatus("Minified.", "ok");
+    });
+
+    document.getElementById("camel").addEventListener("click", () => {
+      convertCase(toCamelCase, "Converted to camelCase.");
+    });
+
+    document.getElementById("snake").addEventListener("click", () => {
+      convertCase(toSnakeCase, "Converted to snake_case.");
+    });
+
+    document.getElementById("kebab").addEventListener("click", () => {
+      convertCase(toKebabCase, "Converted to kebab-case.");
+    });
+
+    document.getElementById("upper").addEventListener("click", () => {
+      convertCase((text) => text.toUpperCase(), "Converted to uppercase.");
+    });
+
+    document.getElementById("lower").addEventListener("click", () => {
+      convertCase((text) => text.toLowerCase(), "Converted to lowercase.");
+    });
+
+    document.getElementById("copy").addEventListener("click", async () => {
+      if (!input.value) {
+        setStatus("Nothing to copy.", "error");
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(input.value);
+        setStatus("Copied.", "ok");
+      } catch {
+        input.select();
+        setStatus("Select the text and copy it manually.", "error");
+      }
+    });
+
+    input.addEventListener("keydown", (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        event.preventDefault();
+        document.getElementById("format").click();
+      }
+    });
+
+    const panelText = document.getElementById("panel-text");
+    const panelJwt = document.getElementById("panel-jwt");
+    const tabText = document.getElementById("tab-text");
+    const tabJwt = document.getElementById("tab-jwt");
+
+    function showTab(name) {
+      const jwt = name === "jwt";
+      panelText.hidden = jwt;
+      panelJwt.hidden = !jwt;
+      tabText.setAttribute("aria-selected", String(!jwt));
+      tabJwt.setAttribute("aria-selected", String(jwt));
+      tabText.classList.toggle("secondary", jwt);
+      tabJwt.classList.toggle("secondary", !jwt);
+    }
+
+    tabText.addEventListener("click", () => showTab("text"));
+    tabJwt.addEventListener("click", () => showTab("jwt"));
+
+    const jwtInput = document.getElementById("jwt-input");
+    const jwtStatus = document.getElementById("jwt-status");
+    const jwtOutput = document.getElementById("jwt-output");
+
+    function setJwtStatus(message, kind) {
+      jwtStatus.textContent = message;
+      jwtStatus.className = "status" + (kind ? " " + kind : "");
+    }
+
+    function decodeSegment(segment) {
+      const base64 = segment.replace(/-/g, "+").replace(/_/g, "/");
+      const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+      const binary = atob(padded);
+      const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+      return new TextDecoder().decode(bytes);
+    }
+
+    function parsePart(segment, label) {
+      let text;
+      try {
+        text = decodeSegment(segment);
+      } catch {
+        throw new Error("Could not decode the " + label + ".");
+      }
+      try {
+        return { text, value: JSON.parse(text) };
+      } catch {
+        throw new Error("The " + label + " is not valid JSON.");
+      }
+    }
+
+    function formatTimestamp(seconds) {
+      const date = new Date(seconds * 1000);
+      if (Number.isNaN(date.getTime())) return String(seconds);
+      return date.toLocaleString() + " (" + seconds + ")";
+    }
+
+    function timeNote(name, seconds) {
+      const now = Date.now() / 1000;
+      if (name === "exp") return seconds * 1000 < Date.now() ? " — expired" : " — still valid";
+      if (name === "nbf") return seconds > now ? " — not valid yet" : " — active";
+      return "";
+    }
+
+    function addClaim(list, name, value) {
+      const term = document.createElement("dt");
+      term.textContent = name;
+      const detail = document.createElement("dd");
+      detail.textContent = value;
+      list.append(term, detail);
+    }
+
+    function claimValue(value) {
+      if (Array.isArray(value)) return value.map(String).join(", ");
+      if (value !== null && typeof value === "object") return JSON.stringify(value);
+      return String(value);
+    }
+
+    function renderJwt(header, payload, signature) {
+      jwtOutput.replaceChildren();
+
+      const claims = document.createElement("dl");
+      claims.className = "claims";
+      addClaim(claims, "Algorithm", claimValue(header.alg ?? "—"));
+      if (header.typ) addClaim(claims, "Type", claimValue(header.typ));
+      if (header.kid) addClaim(claims, "Key ID", claimValue(header.kid));
+
+      const named = [
+        ["iss", "Issuer"],
+        ["sub", "Subject"],
+        ["aud", "Audience"],
+        ["jti", "JWT ID"],
+      ];
+      for (const [key, label] of named) {
+        if (payload[key] !== undefined) addClaim(claims, label, claimValue(payload[key]));
+      }
+      for (const [key, label] of [["iat", "Issued at"], ["nbf", "Not before"], ["exp", "Expires"]]) {
+        if (payload[key] === undefined) continue;
+        const seconds = Number(payload[key]);
+        const shown = Number.isFinite(seconds)
+          ? formatTimestamp(seconds) + timeNote(key, seconds)
+          : claimValue(payload[key]);
+        addClaim(claims, label, shown);
+      }
+      jwtOutput.append(claims);
+
+      const headerTitle = document.createElement("h2");
+      headerTitle.textContent = "Header";
+      const headerJson = document.createElement("pre");
+      headerJson.textContent = JSON.stringify(header, null, 2);
+      const payloadTitle = document.createElement("h2");
+      payloadTitle.textContent = "Payload";
+      const payloadJson = document.createElement("pre");
+      payloadJson.textContent = JSON.stringify(payload, null, 2);
+      const signatureTitle = document.createElement("h2");
+      signatureTitle.textContent = "Signature";
+      const signatureText = document.createElement("pre");
+      signatureText.textContent = signature || "(empty)";
+      const note = document.createElement("p");
+      note.className = "note";
+      note.textContent = "The signature is not verified.";
+
+      jwtOutput.append(headerTitle, headerJson, payloadTitle, payloadJson, signatureTitle, signatureText, note);
+      jwtOutput.hidden = false;
+    }
+
+    function decodeJwt() {
+      const token = jwtInput.value.trim();
+      if (!token) {
+        jwtOutput.hidden = true;
+        setJwtStatus("Paste a JWT first.", "error");
+        return;
+      }
+
+      const parts = token.split(".");
+      if (parts.length < 2 || parts.length > 3 || parts.slice(0, 2).some((part) => !part)) {
+        jwtOutput.hidden = true;
+        setJwtStatus("A JWT has a header, payload, and optional signature, separated by dots.", "error");
+        return;
+      }
+
+      try {
+        const header = parsePart(parts[0], "header");
+        const payload = parsePart(parts[1], "payload");
+        if (!header.value || typeof header.value !== "object" || Array.isArray(header.value)) {
+          throw new Error("The header must be a JSON object.");
+        }
+        if (!payload.value || typeof payload.value !== "object" || Array.isArray(payload.value)) {
+          throw new Error("The payload must be a JSON object.");
+        }
+        renderJwt(header.value, payload.value, parts[2] || "");
+        setJwtStatus("Decoded.", "ok");
+      } catch (error) {
+        jwtOutput.hidden = true;
+        setJwtStatus(error.message, "error");
+      }
+    }
+
+    document.getElementById("jwt-decode").addEventListener("click", decodeJwt);
+    jwtInput.addEventListener("keydown", (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        event.preventDefault();
+        decodeJwt();
+      }
+    });
+  </script>
+</body>
+</html>
